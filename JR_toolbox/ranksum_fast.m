@@ -56,7 +56,9 @@ if nargin>2 && isnumeric(varargin{1})
 end
 oknames = {'alpha' 'method'};
 dflts   = {alpha   ''};
-[eid,emsg,alpha,method] = internal.stats.getargs(oknames,dflts,varargin{:});
+eid=[];
+method=[];
+%[eid,emsg,alpha,method] = internal.stats.getargs(oknames,dflts,varargin{:});
 if ~isempty(eid)
    error(sprintf('stats:ranksum:%s',eid),emsg);
 end
