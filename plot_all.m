@@ -3,11 +3,11 @@ function plot_all(data,cfg)
 if ~exist('cfg','var'), cfg = []; end
 if ~isfield(cfg,'plot'),    cfg.plot    = {'img_time', 'topo'}; end
 if ~isfield(cfg,'trial'),   cfg.trial   = 1:length(data.trial); end
-if ~isfield(cfg,'toi'),     cfg.toi     = -.050:.100:.650;      end % time region of interest
+if ~isfield(cfg,'toi'),     cfg.toi     = -.050:.050:.300;      end % time region of interest
 if ~isfield(cfg,'save'),    cfg.save    = false;                end % output image
 if ~isfield(cfg,'figure_name'),cfg.figure_name = 'default';     end % output image name
 if ~isfield(cfg,'zlim_grad'),cfg.zlim_grad= [0 1]*5e-12;       end % output image
-if ~isfield(cfg,'zlim_mag'), cfg.zlim_mag= [-1 1]*5e-13;        end % output image
+if ~isfield(cfg,'zlim_mag'), cfg.zlim_mag= [-2.5 2.5]*1e-13;        end % output image
 
 % generic function
 get_trials = @(x) reshape(cell2mat(x.trial),[size(x.trial{1}) length(x.trial)]); % fast way of getting ft_trials
@@ -34,7 +34,7 @@ load('nm306all_neighb.mat', 'neighbours');
 cfg_                 = [];
 cfg_.neighbours      = neighbours;
 cfg_.planarmethod    = 'sincos';
-cfg_.combinemethod   = 'complex';
+cfg_.combinemethod   = 'svd';
 cmb                 = ft_combineplanar(cfg_,data);
 clear cfg_
 % compute norm of average
@@ -46,7 +46,7 @@ if ismember('img_time',cfg.plot);
     chan_mag = setdiff(selchan(cmb.label,'MEG'),selchan(cmb.label,'+'));
     chan_cmb = intersect(selchan(cmb.label,'MEG'),selchan(cmb.label,'+'));
     
-    figure;clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    figure(1);clf;set(gcf,'color','w','position',[50 1 1551 821]);
     subplot(3,1,1);
     imagesc(time,[],cmb.avg(chan_mag,:),cfg.zlim_mag);
     title('magnetometers');xlabel('time');ylabel('channels');
@@ -60,6 +60,7 @@ if ismember('img_time',cfg.plot);
     title('gradiometers (complex)');xlabel('time');ylabel('channels');
     axis([minmax(cfg.toi) ylim]); axis tight;box off;colorbar;
     if cfg.save
+        drawnow;
         export_fig([cfg.figure_name '_time.png']);
     end
 end
@@ -75,7 +76,7 @@ if ismember('topo',cfg.plot);
     layout = ft_prepare_layout(cfg_);
     clear cfg_
     %% plot classic topo
-    figure();clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    figure(2);clf;set(gcf,'color','w','position',[50 1 1551 821]);
     for t = 1:length(cfg.toi)
         cfg_             = [];
         %cfg_.neighbours  = neighbours;
@@ -103,6 +104,7 @@ if ismember('topo',cfg.plot);
     set(gcf,'name',cfg.figure_name);
     
     if cfg.save
+        drawnow;
         export_fig([cfg.figure_name '_topo.png']);
     end
 end
