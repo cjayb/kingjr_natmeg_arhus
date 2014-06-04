@@ -8,6 +8,7 @@ if ~isfield(cfg,'save'),    cfg.save    = false;                end % output ima
 if ~isfield(cfg,'figure_name'),cfg.figure_name = 'default';     end % output image name
 if ~isfield(cfg,'zlim_grad'),cfg.zlim_grad= [0 1]*5e-12;       end % output image
 if ~isfield(cfg,'zlim_mag'), cfg.zlim_mag= [-2.5 2.5]*1e-13;        end % output image
+if ~isfield(cfg,'tlim_timeXtrial'), cfg.tlim_timeXtrial= [min(data.time{1}) max(data.time{1})];        end % output image
 
 % generic function
 get_trials = @(x) reshape(cell2mat(x.trial),[size(x.trial{1}) length(x.trial)]); % fast way of getting ft_trials
@@ -34,8 +35,8 @@ load('nm306all_neighb.mat', 'neighbours');
 cfg_                 = [];
 cfg_.neighbours      = neighbours;
 cfg_.planarmethod    = 'sincos';
-cfg_.combinemethod   = 'svd';
-cmb                 = ft_combineplanar(cfg_,data);
+cfg_.combinemethod   = 'complex';
+cmb                 = ft_combineplanar_local(cfg_,data);
 clear cfg_
 % compute norm of average
 cmb_norm            = cmb;
@@ -46,22 +47,23 @@ if ismember('img_time',cfg.plot);
     chan_mag = setdiff(selchan(cmb.label,'MEG'),selchan(cmb.label,'+'));
     chan_cmb = intersect(selchan(cmb.label,'MEG'),selchan(cmb.label,'+'));
     
-    figure(1);clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    fh=figure(1);clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    set(fh,'Renderer','painters')
     subplot(3,1,1);
     imagesc(time,[],cmb.avg(chan_mag,:),cfg.zlim_mag);
     title('magnetometers');xlabel('time');ylabel('channels');
-    axis([minmax(cfg.toi) ylim]); axis tight;box off;colorbar;
+    axis tight;box off;colorbar;axis([minmax(cfg.tlim_timeXtrial) ylim]); 
     subplot(3,1,2);
     imagesc(time,[],abs(cmb.avg(chan_cmb,:)),cfg.zlim_grad);
     title('gradiometers (norm)');xlabel('time');ylabel('channels');
-    axis([minmax(cfg.toi) ylim]); axis tight;box off;colorbar;
+    axis tight;box off;colorbar; axis([minmax(cfg.tlim_timeXtrial) ylim]); 
     subplot(3,1,3);
     imagesc(time,[],complex2rgb(cmb.avg(chan_cmb,:),cfg.zlim_grad));
     title('gradiometers (complex)');xlabel('time');ylabel('channels');
-    axis([minmax(cfg.toi) ylim]); axis tight;box off;colorbar;
+    axis tight;box off;colorbar;axis([minmax(cfg.tlim_timeXtrial) ylim]); 
     if cfg.save
         drawnow;
-        export_fig([cfg.figure_name '_time.png']);
+        export_fig_cjb([cfg.figure_name '_time.png']);
     end
 end
 if ismember('topo',cfg.plot);
@@ -76,7 +78,8 @@ if ismember('topo',cfg.plot);
     layout = ft_prepare_layout(cfg_);
     clear cfg_
     %% plot classic topo
-    figure(2);clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    fh=figure(2);clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    set(fh,'Renderer','painters')
     for t = 1:length(cfg.toi)
         cfg_             = [];
         %cfg_.neighbours  = neighbours;
@@ -85,6 +88,7 @@ if ismember('topo',cfg.plot);
         cfg_.marker      = 'off';
         cfg_.style       = 'straight';
         cfg_.layout      = layout_mag;
+        cfg_.interactive = 'no';
         cfg_.xlim        = cfg.toi(t)+[-.01 .01];
         
         % magnetometers
@@ -105,6 +109,6 @@ if ismember('topo',cfg.plot);
     
     if cfg.save
         drawnow;
-        export_fig([cfg.figure_name '_topo.png']);
+        export_fig_cjb([cfg.figure_name '_topo.png']);
     end
 end

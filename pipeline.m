@@ -1,9 +1,9 @@
 clear
 %% libraries & path
-do_preprocessing = 1;
-do_postproc_erfplots = 1;
-do_postproc_univar = 1;
-do_postproc_decode = 1;
+do_preprocessing = 0;
+do_postproc_erfplots = 0;
+do_postproc_univar = 0;
+do_postproc_decode = 0;
 do_postproc_univar_across = 1;
 do_postproc_decode_across = 1;
 do_sandbox = 0;
@@ -31,6 +31,7 @@ switch run_system
                                                  % MNE that includes
                                                  % fiff_read_epochs...
         addpath('/projects/MINDLAB2013_01-MEG-AttentionEmotionVisualTracking/scripts/kingjr/natmeg_arhus/JR_toolbox/');
+        addpath('/projects/MINDLAB2013_01-MEG-AttentionEmotionVisualTracking/scripts/git/export_fig/');
         %addpath('/media/DATA/Pro/Toolbox/export_fig/');
         data_path = [proj_scratch, '/tsss_initial/'];
         events_path = [proj_scratch, '/events.fif/'];
@@ -309,7 +310,7 @@ if do_postproc_erfplots
             %% check photo diod
             chan=selchan(data.label,'MISC001');% photodiod channel
             photodiod = cell2mat(cellfun(@(x) x(chan,:)',data.trial,'uniformoutput', false))';
-            imagesc(data.time{1},[],photodiod);
+            figure(3); clf; imagesc(data.time{1},[],photodiod);
             export_fig([file '_photodiod.png']);
             close all;
             save([file '_mean.mat'], 'photodiod', '-append');
@@ -317,7 +318,7 @@ if do_postproc_erfplots
             
             %% check trigger: this is EXPECTED to be wrong (negative)!!
             chan=selchan(data.label,'STI101');% trigger channel
-            trigger=cell2mat(cellfun(@(x) x(chan,:)',data.trial,'uniformoutput', false))';
+            figure(4); clf; trigger=cell2mat(cellfun(@(x) x(chan,:)',data.trial,'uniformoutput', false))';
             imagesc(data.time{1},[],trigger);
             export_fig([file '_trigger.png']);
             close all;
@@ -330,7 +331,7 @@ if do_postproc_erfplots
             cfg.save        = true;
             cfg.figure_name = [file '_all'];
             plot_all(data,cfg);
-            close all;
+            %close all;
             erf_all = get_meanTrials(data,1:length(data.trial));
             save([file '_mean.mat'], 'erf_all', '-append');
             clear erf_all;
@@ -539,7 +540,8 @@ if do_postproc_univar_across
             data.label = data.label(1:306);
             %% plot ERF
             cfg             = [];
-            cfg.toi         = -.100:.02:.400;
+            cfg.toi         = -.020:.02:.200;
+            cfg.tlim_timeXtrial = [-0.2 0.300];
             cfg.zlim_mag    = [-1 1]*1e-13;
             cfg.zlim_grad   = [0 1]*5e-12;
             cfg.save        = true;
@@ -568,16 +570,18 @@ if do_postproc_univar_across
             
             %% plot ERF
             cfg             = [];
-            cfg.toi         = -.100:.02:.400;
-            cfg.zlim_mag    = [-1 1]*5e-13;
-            cfg.zlim_grad   = [0 1]*5e-12;
+            cfg.toi         = -.030:.030:.250;
+            cfg.tlim_timeXtrial = [-0.2 0.300];
+            cfg.zlim_mag    = [-1 1]*1e-13;
+            cfg.zlim_grad   = [0 3]*1e-12;
             cfg.save        = true;
             cfg.figure_name = [output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast 'ERF'];
             plot_all(all_erf,cfg);
             
             %% plot p values
             cfg             = [];
-            cfg.toi         = -.100:.02:.400;
+            cfg.toi         = -.030:.03:.250;
+            cfg.tlim_timeXtrial = [-0.2 0.300];
             cfg.zlim_mag    = [0 6];
             cfg.zlim_grad   = [0 6];
             cfg.save        = true;
@@ -611,15 +615,17 @@ if do_postproc_decode_across
             load([output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf.mat'],'data');
             time = data.time{1}(results.dims(CORRECTTHIS));
             clear data;
+            xlim = [-0.15 0.3];
             %% plot
-            figure();set(gcf,'color','w');
+            fh=figure();set(gcf,'color','w');
+            set(fh,'Renderer','painters')
             subplot(2,1,1);
             plot_eb(time,auc);
             axis tight;axis([xlim .45 1]);box off;hold on;plot(xlim,[.5 .5],'--k');colorbar;
             subplot(2,1,2);
-            imagesc(time,[],auc,[0 1]);colorbar;
+            imagesc(time,[],auc,[0 1]);colorbar; set(gca, 'XLim', xlim);
             axis tight;box off;
-            export_fig([output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast '_decoding.png']);
+            export_fig_cjb([output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast '_decoding.png']);
         end
         
         %% train in one condition generalize to the other
@@ -645,20 +651,22 @@ if do_postproc_decode_across
             load([output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf.mat'],'data');
             time = data.time{1}(results.dims(CORRECTTHIS));
             clear data;
+            xlim = [-0.15 0.3];
             %% plot
-            figure();set(gcf,'color','w');
+            fh=figure();set(gcf,'color','w');
+            set(fh,'Renderer','painters')
             subplot(2,1,1);
             plot_eb(time,auc,[0 0 1]);
             hold on;
             plot_eb(time,aucg,[1 0 0]);
             axis tight;axis([xlim .45 1]);box off;hold on;plot(xlim,[.5 .5],'--k');colorbar;
             subplot(4,1,3);
-            imagesc(time,[],auc,[0 1]);colorbar;
+            imagesc(time,[],auc,[0 1]);colorbar;  set(gca, 'XLim', xlim);
             axis tight;box off;
             subplot(4,1,4);
-            imagesc(time,[],aucg,[0 1]);colorbar;
+            imagesc(time,[],aucg,[0 1]);colorbar;  set(gca, 'XLim', xlim);
             axis tight;box off;
-            %         export_fig([output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast '_decoding.png']);
+            export_fig_cjb([output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast '_decoding_generalization.png']);
         end
     end
 end
