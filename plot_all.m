@@ -13,7 +13,7 @@ if ~isfield(cfg,'tlim_timeXtrial'), cfg.tlim_timeXtrial= [min(data.time{1}) max(
 % generic function
 get_trials = @(x) reshape(cell2mat(x.trial),[size(x.trial{1}) length(x.trial)]); % fast way of getting ft_trials
 selchan = @(c,s) find(cell2mat(cellfun(@(x) ~isempty(strfind(x,s)),c,'uniformoutput', false))==1);
-
+selgrad = @(c) find(cell2mat(cellfun(@(x) ~isempty(strfind(x(1:3),'MEG')) && (~isempty(strfind(x(end),'2')) || ~isempty(strfind(x(end),'3'))),c,'uniformoutput', false))==1);
 %% select data
 % select trials
 data.trial      = data.trial(cfg.trial);
@@ -64,6 +64,27 @@ if ismember('img_time',cfg.plot);
     if cfg.save
         drawnow;
         export_fig_cjb([cfg.figure_name '_time.png']);
+    end
+end
+if ismember('butterfly_time',cfg.plot);
+    chan_mag = setdiff(selchan(cmb.label,'MEG'),selchan(cmb.label,'+'));
+    chan_grad = selgrad(data.label);
+    
+    fh=figure(3);clf;set(gcf,'color','w','position',[50 1 1551 821]);
+    set(fh,'Renderer','painters')
+    subplot(2,1,1);
+    plot(time,cmb.avg(chan_mag,:));
+    ylm = ylim; set(gca,'Ylim', [max(ylm(1), -5e-13), min(ylm(2), 5e-13)]);
+    set(gca,'XLim', minmax(cfg.tlim_timeXtrial));
+    title('magnetometers');xlabel('time');ylabel('channels');
+    subplot(2,1,2);
+    plot(time,data.avg(chan_grad,:));
+    ylm = ylim; set(gca,'Ylim', [max(ylm(1), -10e-12), min(ylm(2), 10e-12)]);
+    set(gca,'XLim', minmax(cfg.tlim_timeXtrial));
+    title('gradiometers');xlabel('time');ylabel('channels');
+    if cfg.save
+        drawnow;
+        export_fig_cjb([cfg.figure_name '_time_butterfly.png']);
     end
 end
 if ismember('topo',cfg.plot);

@@ -1,11 +1,11 @@
 clear
 %% libraries & path
 do_preprocessing = 0;
-do_postproc_erfplots = 0;
+do_postproc_erfplots = 1;
 do_postproc_univar = 0;
 do_postproc_decode = 0;
-do_postproc_univar_across = 1;
-do_postproc_decode_across = 1;
+do_postproc_univar_across = 0;
+do_postproc_decode_across = 0;
 do_sandbox = 0;
 %% 
 run_system = 'cfin_server';
@@ -103,8 +103,8 @@ end
     
 clear files ii jj subfile
 
-%analyses = {'visualSearch', 'feedback'};
-analyses = {'visualSearch'};
+analyses = {'visualSearch', 'feedback'};
+%analyses = {'visualSearch'};
 
 %% add information about subjects' conditioning order (scenario)
 subjects_names = {'005_ELX','006_HEN','007_SGF','008_LFI',...
@@ -208,7 +208,10 @@ if do_preprocessing,
                 cfg.bpfilter        = 'yes';
                 cfg.bpfreq          = [.5 35];  % band pass filter between .5 and 35 Hz
                 cfg.demean          = 'yes';    % baseline correction on pre stimulus
-                cfg.baselinewindow  = [0 .300];
+
+                % HERE BE DRAGONS: with the above fix for the offset, this
+                % needs to be relative to the new (-500 ms offset) times!
+                cfg.baselinewindow  = [-0.4 -0.1];% I'll just assume this [0 .300]; corresponds to [-0.4, -0.1] in the new scale
                 data                = ft_preprocessing(cfg);
                 
                 %% CJB: redoing the trial info, 
