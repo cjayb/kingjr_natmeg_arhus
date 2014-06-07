@@ -1,11 +1,11 @@
 clear
 %% libraries & path
-do_preprocessing = 0;
+do_preprocessing = 1;
 do_postproc_erfplots = 1;
-do_postproc_univar = 0;
-do_postproc_decode = 0;
-do_postproc_univar_across = 0;
-do_postproc_decode_across = 0;
+do_postproc_univar = 1;
+do_postproc_decode = 1;
+do_postproc_univar_across = 1;
+do_postproc_decode_across = 1;
 do_sandbox = 0;
 %% 
 run_system = 'cfin_server';
