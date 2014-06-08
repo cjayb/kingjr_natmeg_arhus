@@ -259,7 +259,7 @@ if do_preprocessing,
                 switch analysis
                     case 'visualSearch'
                         %data.trialinfo(:,4) = mod(data.trialinfo(:,3),100)>1; % face 1 or face 2
-                        data.trialinfo(:,4) = round(data.trialinfo(1:10,3)/100)>1; % face {1,'a','3'} or face {2,'b','10'}
+                        data.trialinfo(:,4) = round(data.trialinfo(:,3)/100)>1; % face {1,'a','3'} or face {2,'b','10'}
                         
                         data.trialinfo(:,5) = mod(data.trialinfo(:,3),10)>0;  % odd or identical faces
                         data.trialinfo(:,6) = mod(data.trialinfo(:,3),10);    % position of odd ball
