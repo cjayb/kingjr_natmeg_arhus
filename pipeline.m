@@ -2,11 +2,11 @@ clear
 %% libraries & path
 do_preprocessing = 0;
 do_postproc_erfplots = 0;
-do_postproc_eyemovplots = 1;
-do_postproc_univar = 0;
-do_postproc_decode = 0;
-do_postproc_univar_across = 0;
-do_postproc_decode_across = 0;
+do_postproc_eyemovplots = 0;
+do_postproc_univar = 1;
+do_postproc_decode = 1;
+do_postproc_univar_across = 1;
+do_postproc_decode_across = 1;
 do_sandbox = 0;
 %% 
 run_system = 'cfin_server';
@@ -265,7 +265,7 @@ if do_preprocessing,
                         data.trialinfo(:,5) = mod(data.trialinfo(:,3),10)>0;  % odd or identical faces
                         data.trialinfo(:,6) = mod(data.trialinfo(:,3),10);    % position of odd ball
                     case 'feedback'
-                        data.trialinfo(:,4) = data.trialinfo(:,3)<20;         % face 1 or 2
+                        data.trialinfo(:,4) = data.trialinfo(:,3)>19;         % face 1 or 2
                         data.trialinfo(:,5) = mod(data.trialinfo(:,3),10)>0;  % odd or identical (emotion)
                 end
                 
