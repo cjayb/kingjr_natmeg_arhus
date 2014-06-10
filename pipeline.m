@@ -104,7 +104,9 @@ end
 clear files ii jj subfile
 
 analyses = {'visualSearch', 'feedback'};
-%analyses = {'visualSearch'};
+%analyses = {'visualSearch'}; % for the trialinfo fix we only need to re-run 
+                             % visualSearch, as the feedback trialdefs were
+                             % OK.
 
 %% add information about subjects' conditioning order (scenario)
 subjects_names = {'005_ELX','006_HEN','007_SGF','008_LFI',...
@@ -249,11 +251,17 @@ if do_preprocessing,
                 clear data_resample;
                 
                 %% build explicit trial info
+                % this is wrong: the face 1 ('a', '3') vs face 2 ('b', '10') contrast
+                % should be: round(val/100) > 1 (anything 1xx -> 0,
+                % anything 2xx -> 1), AND the odd/identical contrast should
+                % be testing against >0, not >1!
                 data.trialinfo(:,7) = condition;
                 switch analysis
                     case 'visualSearch'
-                        data.trialinfo(:,4) = mod(data.trialinfo(:,3),100)>1; % face 1 or face 2
-                        data.trialinfo(:,5) = mod(data.trialinfo(:,3),10)>1;  % odd or identical faces
+                        %data.trialinfo(:,4) = mod(data.trialinfo(:,3),100)>1; % face 1 or face 2
+                        data.trialinfo(:,4) = round(data.trialinfo(:,3)/100)>1; % face {1,'a','3'} or face {2,'b','10'}
+                        
+                        data.trialinfo(:,5) = mod(data.trialinfo(:,3),10)>0;  % odd or identical faces
                         data.trialinfo(:,6) = mod(data.trialinfo(:,3),10);    % position of odd ball
                     case 'feedback'
                         data.trialinfo(:,4) = data.trialinfo(:,3)<20;         % face 1 or 2
