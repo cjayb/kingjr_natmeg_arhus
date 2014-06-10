@@ -1,10 +1,10 @@
 clear
 %% libraries & path
-do_preprocessing = 1;
-do_postproc_erfplots = 1;
-do_postproc_univar = 1;
-do_postproc_decode = 1;
-do_postproc_univar_across = 1;
+do_preprocessing = 0;
+do_postproc_erfplots = 0;
+do_postproc_univar = 0;
+do_postproc_decode = 0;
+do_postproc_univar_across = 0;
 do_postproc_decode_across = 1;
 do_sandbox = 0;
 %% 
@@ -604,9 +604,12 @@ if do_postproc_univar_across
 end
 %% POSTPROCESSING DECODING across subjects
 if do_postproc_decode_across
+    conditions = {'erf_all', 'erf_pre', 'erf_post'};
+
     for analysis = analyses
         analysis=analysis{1};
         
+        contrasts = {'face','odd', 'prepost'};
         for contrast= contrasts;
             contrast=contrast{1};
             %% concatenate decoding prediction
