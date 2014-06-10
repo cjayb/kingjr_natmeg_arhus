@@ -103,8 +103,8 @@ end
     
 clear files ii jj subfile
 
-%analyses = {'visualSearch', 'feedback'};
-analyses = {'visualSearch'}; % for the trialinfo fix we only need to re-run 
+analyses = {'visualSearch', 'feedback'};
+%analyses = {'visualSearch'}; % for the trialinfo fix we only need to re-run 
                              % visualSearch, as the feedback trialdefs were
                              % OK.
 
