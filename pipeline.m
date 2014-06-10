@@ -2,10 +2,11 @@ clear
 %% libraries & path
 do_preprocessing = 0;
 do_postproc_erfplots = 0;
+do_postproc_eyemovplots = 1;
 do_postproc_univar = 0;
 do_postproc_decode = 0;
 do_postproc_univar_across = 0;
-do_postproc_decode_across = 1;
+do_postproc_decode_across = 0;
 do_sandbox = 0;
 %% 
 run_system = 'cfin_server';
@@ -382,6 +383,43 @@ if do_postproc_erfplots
                     save([file '_mean.mat'], 'erf_ffa', '-append');
                     clear erf_ffa;
             end
+        end
+    end
+end    
+%% POSTPROCESSING: erf plots of eye movements 
+if do_postproc_eyemovplots
+    for analysis = analyses
+        analysis = analysis{1}; 
+        for subject = subjects
+            subject.name
+            % select subject
+            file = [output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf'];
+            data = ft_loadbin([file '.mat'],[file '.dat']);
+            
+            %% 
+            pre=data.trialinfo(:,7)==1; post=data.trialinfo(:,7)==2;
+            figure(3); clf; set(gcf,'color','w', 'Position', [559         128        1100        1031])
+            chanlist = [2,5,3,6];
+            for miscNo = 1:length(chanlist)
+                curChan = sprintf('MISC00%d', chanlist(miscNo));
+                chan=selchan(data.label,curChan);% X1
+                mtrx = cell2mat(cellfun(@(x) x(chan,:)',data.trial,'uniformoutput', false))';
+                subplot(5, 2, miscNo)
+                imagesc(data.time{1},[],mtrx(pre,:)); set(gca,'CLim',[-5, 5]); hold on
+                plot(data.time{1}, (mean(mtrx(pre,:),1)+1)*100,'k','LineWidth',2)
+                subplot(5, 2, miscNo + 4 + 2)
+                imagesc(data.time{1},[],mtrx(post,:)); set(gca,'CLim',[-5, 5]); hold on
+                plot(data.time{1}, (mean(mtrx(post,:),1)+1)*100,'k','LineWidth',2)
+            end
+            subplot(5,2,5); text(0.7, 0.5, 'Left eye'); text(0.05, 0.7, 'PRE'); 
+            text(0.05, 0.3, 'POST'); text(0.3, 0.8, 'X (sacc)'); text(0.3, 0.6, 'Y (blink)'); 
+            text(0.3, 0.4, 'X (sacc)'); text(0.3, 0.2, 'Y (blink)'); colorbar; set(gca,'CLim',[-5, 5]); 
+            subplot(5,2,6); text(0.7, 0.5, 'Right eye'); text(0.05, 0.7, 'PRE'); 
+            text(0.05, 0.3, 'POST'); text(0.3, 0.8, 'X (sacc)'); text(0.3, 0.6, 'Y (blink)'); 
+            text(0.3, 0.4, 'X (sacc)'); text(0.3, 0.2, 'Y (blink)'); colorbar; set(gca,'CLim',[-5, 5]);
+            clear mtrx;
+            export_fig_cjb([file '_eyemov_sessions.png']);
+
         end
     end
 end    
