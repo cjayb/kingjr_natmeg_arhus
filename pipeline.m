@@ -108,6 +108,7 @@ analyses = {'visualSearch', 'feedback'};
 %analyses = {'visualSearch'}; % for the trialinfo fix we only need to re-run 
                              % visualSearch, as the feedback trialdefs were
                              % OK.
+analyses = {'feedback'};
 
 %% add information about subjects' conditioning order (scenario)
 subjects_names = {'005_ELX','006_HEN','007_SGF','008_LFI',...
