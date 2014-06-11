@@ -3,10 +3,13 @@ clear
 do_preprocessing = 0;
 do_postproc_erfplots = 0;
 do_postproc_eyemovplots = 0;
-do_postproc_univar = 1;
-do_postproc_decode = 1;
-do_postproc_univar_across = 1;
-do_postproc_decode_across = 1;
+do_postproc_univar = 0;
+do_postproc_decode = 0;
+do_postproc_univar_across = 0;
+do_postproc_decode_across = 0;
+
+do_postproc_univar_interactions = 0;
+do_postproc_univar_interactions_across = 1;
 do_sandbox = 0;
 %% 
 run_system = 'cfin_server';
@@ -108,7 +111,7 @@ analyses = {'visualSearch', 'feedback'};
 %analyses = {'visualSearch'}; % for the trialinfo fix we only need to re-run 
                              % visualSearch, as the feedback trialdefs were
                              % OK.
-analyses = {'feedback'};
+%analyses = {'feedback'};
 
 %% add information about subjects' conditioning order (scenario)
 subjects_names = {'005_ELX','006_HEN','007_SGF','008_LFI',...
@@ -723,6 +726,147 @@ if do_postproc_decode_across
         end
     end
 end
+
+
+%% POSTPROCESSING: univariate interactions
+if do_postproc_univar_interactions
+    for analysis = analyses
+        analysis = analysis{1};
+        for subject = subjects
+            % select subject
+            file = [output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf'];
+            data = ft_loadbin([file '.mat'],[file '.dat']);
+            
+            %%
+            if subject.scenario == 1,
+                CSinfo = ~data.trialinfo(:,4);
+            else
+                CSinfo = data.trialinfo(:,4);
+            end
+
+            %% Interaction contrasts
+            %contrasts = {'faceXprepost','oddXprepost','CS+vsCS-'};
+            %contrasts = {'faceXodd', 'csXodd'};
+            %contrasts = {'csXdevXses'};%, 
+            contrasts = {'faceXodd', 'csXoddXses'}; % these are the interactions
+                                                    % that make sense:
+                                                    % 1) |DEV vs STD|_x_face
+                                                    % 2) |DEV vs STD|_x_CS_x_session
+            for contrast = contrasts
+                contrast = contrast{1};
+                % define contrast
+                % the y vector (y being the predictor) is used to compared trials where
+                % y==1 and trials where y==2.
+                switch contrast
+                    case 'faceXodd', % DEV vs STD resp differs dep. on identity?
+                        y = (1+~xor(data.trialinfo(:,4), data.trialinfo(:,5))).*(data.trialinfo(:,7)<3);
+                    case 'csXodd', % CS only makes sense when taken as _x_session 
+                        y = (1+~xor(CSinfo, data.trialinfo(:,5))).*(data.trialinfo(:,7)<3); 
+                    case 'csXdevXses' % this is turns out to be quite messy, so drop it!
+                        CSp_dev = CSinfo.*data.trialinfo(:,5); % all CSp deviants
+                        CSm_dev = (~CSinfo).*data.trialinfo(:,5); % all CSm deviants
+                        postpre = data.trialinfo(:,7) - 1;
+                        postpre(postpre==2) = 3; postpre(postpre==0) = 2; 
+                        y = CSp_dev .* postpre;
+                        y = y + CSm_dev .* data.trialinfo(:,7);
+                    case 'csXoddXses'
+                        y = xor(CSinfo, data.trialinfo(:,5));
+                        y(data.trialinfo(:,7) < 2) = ~y(data.trialinfo(:,7) < 2);
+                        y = y.*(data.trialinfo(:,7)<3); y = y + 1;
+                end
+                
+                %----- compute contrast
+                [data_erf data_p]= postproc_univariate(data,y);
+                
+                %----- plot contrast erf
+                cfg             = [];
+                cfg.zlim_grad   = [0 2]*1e-12;
+                cfg.zlim_mag    = [-1 1]*1e-13;
+                cfg.toi         = -.030:.030:.250;
+                cfg.tlim_timeXtrial = [-0.2 0.300];
+                cfg.save        = true;
+                cfg.figure_name = [file '_all_' contrast 'ERF'];
+                plot_all(data_erf,cfg);
+                
+                %----- plot contrast p value
+                cfg             = [];
+                cfg.zlim_mag    = [0 6];
+                cfg.zlim_grad   = [0 6]; % should change plotting function to avoid combination in case of p value.
+                cfg.toi         = -.030:.030:.250;
+                cfg.tlim_timeXtrial = [-0.2 0.300];
+                cfg.save        = true;
+                cfg.figure_name = [file '_all_' contrast 'P'];
+                plot_all(data_p,cfg);
+                
+                %----- save
+                eval([contrast '.p=data_p']);
+                eval([contrast '.erf=data_erf']);
+                save([file '_univariate.mat'], contrast, '-append');
+                clear(contrast);close all;
+            end
+            
+        end
+    end
+end
+%% POSTPROCESSING ERF interactions across subjects
+if do_postproc_univar_interactions_across
+    if 0
+        isCond = load([proj_home '/misc/isConditioned.txt']);isCond = isCond(:,2);
+        isCondSuffix = '_isCond';
+    else
+        isCond = ones(length(subjects),1);
+        isCondSuffix = '';
+    end
+    for analysis = analyses
+        analysis = analysis{1};
+                
+        % Contrasts
+        contrasts = {'faceXodd','csXoddXses'};
+        for contrast = contrasts
+            contrast=contrast{1};
+            ss = 1;
+            %% concatenate data across subjects within a fieldtrip structure
+            for s = 1:length(subjects)
+                if isCond(s) > 0
+                    clear data
+                    file = [output_path 'erf/' subjects(s).name '/' subjects(s).name '_' analysis '_erf_univariate.mat'];
+                    data = load(file, contrast);
+                    if ss == 1
+                        all_erf = data.(contrast).erf;
+                        all_p = data.(contrast).p;
+                    else
+                        all_erf.trials{ss} = data.(contrast).erf.trial{1};
+                        all_p.trials{ss} = data.(contrast).p.trial{1};
+                    end
+                    ss = ss + 1;
+                end
+            end
+            
+            %% plot ERF
+            cfg             = [];
+            cfg.toi         = -.030:.030:.250;
+            cfg.tlim_timeXtrial = [-0.2 0.300];
+            cfg.zlim_mag    = [-2 2]*1e-13;
+            cfg.zlim_grad   = [0 3]*1e-12;
+            cfg.save        = true;
+            cfg.figure_name = [output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast 'ERF' isCondSuffix];
+            plot_all(all_erf,cfg);
+            
+            %% plot p values
+            cfg             = [];
+            cfg.toi         = -.030:.03:.250;
+            cfg.tlim_timeXtrial = [-0.2 0.300];
+            cfg.zlim_mag    = [0 6];
+            cfg.zlim_grad   = [0 6];
+            cfg.save        = true;
+            cfg.figure_name = [output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast 'P_isCond'];
+            plot_all(all_p,cfg);
+        end
+        close all;
+    end
+end
+
+
 
 %% Sand box 
 if do_sandbox
