@@ -6,10 +6,10 @@ do_postproc_eyemovplots = 0;
 do_postproc_univar = 0;
 do_postproc_decode = 0;
 do_postproc_univar_across = 0;
-do_postproc_decode_across = 0;
+do_postproc_decode_across = 1;
 
 do_postproc_univar_interactions = 0;
-do_postproc_univar_interactions_across = 1;
+do_postproc_univar_interactions_across = 0;
 do_sandbox = 0;
 %% 
 run_system = 'cfin_server';
@@ -659,27 +659,21 @@ if do_postproc_decode_across
             for subject = subjects
                 file = [output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf_' contrast '_results.mat'];
                 results=load(file,'probas','y','dims','features');
-                % problem of non exactly identical timing across subjects.
-                if isempty(auc)
-                    CORRECTTHIS = 1:size(results.probas,3);
-                else
-                    CORRECTTHIS = 1:length(auc);
-                end
-                auc(end+1,:) = colAUC(squeeze(results.probas(:,:,CORRECTTHIS,1,1)), results.y);
+                auc(end+1,:) = colAUC(squeeze(results.probas(:,:,:,1,1)), results.y);
             end
             %% retrieve time
             load([output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf.mat'],'data');
-            time = data.time{1}(results.dims(CORRECTTHIS));
+            time = data.time{1}(results.dims);
             clear data;
-            xlim = [-0.15 0.3];
+            xlim_man = [-0.15 0.3];
             %% plot
             fh=figure();set(gcf,'color','w');
             set(fh,'Renderer','painters')
             subplot(2,1,1);
             plot_eb(time,auc);
-            axis tight;axis([xlim .45 1]);box off;hold on;plot(xlim,[.5 .5],'--k');colorbar;
+            axis tight;axis([xlim_man .45 1]);box off;hold on;plot(xlim_man,[.5 .5],'--k');colorbar;
             subplot(2,1,2);
-            imagesc(time,[],auc,[0 1]);colorbar; set(gca, 'XLim', xlim);
+            imagesc(time,[],auc,[0 1]);colorbar; set(gca, 'XLim', xlim_man);
             axis tight;box off;
             export_fig_cjb([output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast '_decoding.png']);
         end
@@ -694,20 +688,14 @@ if do_postproc_decode_across
             for subject = subjects
                 file = [output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf_' contrast '_results.mat'];
                 results=load(file,'probas','probasg', 'y','yg', 'dims','features');
-                % problem of non exactly identical timing across subjects.
-                if isempty(auc)
-                    CORRECTTHIS = 1:size(results.probas,3);
-                else
-                    CORRECTTHIS = 1:length(auc);
-                end
-                auc(end+1,:) = colAUC(squeeze(results.probas(:,:,CORRECTTHIS,1,1)), results.y);
-                aucg(end+1,:) = colAUC(squeeze(results.probasg(:,:,CORRECTTHIS,1,1)), -results.yg);
+                auc(end+1,:) = colAUC(squeeze(results.probas(:,:,:,1,1)), results.y);
+                aucg(end+1,:) = colAUC(squeeze(results.probasg(:,:,:,1,1)), -results.yg);
             end
             %% retrieve time
             load([output_path 'erf/' subject.name '/' subject.name '_' analysis '_erf.mat'],'data');
-            time = data.time{1}(results.dims(CORRECTTHIS));
+            time = data.time{1}(results.dims);
             clear data;
-            xlim = [-0.15 0.3];
+            xlim_man = [-0.15 0.3];
             %% plot
             fh=figure();set(gcf,'color','w');
             set(fh,'Renderer','painters')
@@ -715,12 +703,12 @@ if do_postproc_decode_across
             plot_eb(time,auc,[0 0 1]);
             hold on;
             plot_eb(time,aucg,[1 0 0]);
-            axis tight;axis([xlim .45 1]);box off;hold on;plot(xlim,[.5 .5],'--k');colorbar;
+            axis tight;axis([xlim_man .45 1]);box off;hold on;plot(xlim_man,[.5 .5],'--k');colorbar;
             subplot(4,1,3);
-            imagesc(time,[],auc,[0 1]);colorbar;  set(gca, 'XLim', xlim);
+            imagesc(time,[],auc,[0 1]);colorbar;  set(gca, 'XLim', xlim_man);
             axis tight;box off;
             subplot(4,1,4);
-            imagesc(time,[],aucg,[0 1]);colorbar;  set(gca, 'XLim', xlim);
+            imagesc(time,[],aucg,[0 1]);colorbar;  set(gca, 'XLim', xlim_man);
             axis tight;box off;
             export_fig_cjb([output_path 'erf/across_subjects/across_subjects_' analysis '_erf_' contrast '_decoding_generalization.png']);
         end
@@ -900,23 +888,18 @@ if do_sandbox
         % load decoding output
         results=load([file '_' contrast '_results.mat'],'probas','probasg', 'y','yg', 'dims','features');
         % problem of non exactly identical timing across subjects.
-        if s==length(subjects)
-            CORRECTTHIS = 1:size(results.probas,3);
-        else
-            CORRECTTHIS = 1:length(auc_pre);
-        end
         
-        auc_pre(s,:) = colAUC(squeeze(results.probas(:,:,CORRECTTHIS,1,1)), results.y);
-        auc_post(s,:) = colAUC(squeeze(results.probasg(:,:,CORRECTTHIS,1,1)), -results.yg);
+        auc_pre(s,:) = colAUC(squeeze(results.probas(:,:,:,1,1)), results.y);
+        auc_post(s,:) = colAUC(squeeze(results.probasg(:,:,:,1,1)), -results.yg);
         
         % face 1
         for f = 1:2
-            auc_pre_face(s,:,mod(subjects(s).scenario+f,2)+1) = colAUC(squeeze(results.probas(:,face_pre==f,CORRECTTHIS,1,1)), results.y(face_pre==f));
-            auc_post_face(s,:,mod(subjects(s).scenario+f,2)+1) = colAUC(squeeze(results.probasg(:,face_post==f,CORRECTTHIS,1,1)), -results.yg(face_post==f));
+            auc_pre_face(s,:,mod(subjects(s).scenario+f,2)+1) = colAUC(squeeze(results.probas(:,face_pre==f,:,1,1)), results.y(face_pre==f));
+            auc_post_face(s,:,mod(subjects(s).scenario+f,2)+1) = colAUC(squeeze(results.probasg(:,face_post==f,:,1,1)), -results.yg(face_post==f));
         end
     end
     %% retrieve time
-    time = data.time{1}(results.dims(CORRECTTHIS));
+    time = data.time{1}(results.dims);
     %% plot
     figure();set(gcf,'color','w');
     subplot(3,1,1);hold on;
